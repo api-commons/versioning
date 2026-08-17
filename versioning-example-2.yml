@@ -1,0 +1,60 @@
+# API Commons — Versioning as an apis.yml property, illustrative example
+#
+# Two properties, showing the two location patterns that path-based versioning does not
+# cover: a date-pinned request header, and a versioned vendor media type.
+#
+# Still a made-up API on example.com. Real providers move their current version on their
+# own schedule, which is what `url` and `source_date` on the property are for.
+
+- name: Versioning
+  type: Versioning
+  description: >-
+    How the Example API is versioned. Versions are dates, pinned to the account at
+    signup, and overridable per request with a header.
+  url: https://developers.example.com/versioning
+  source_date: '2026-08-17'
+  data:
+    scheme: date
+    location: header
+    parameter: Example-Version
+    current: '2026-08-01'
+    default: '2025-11-18'
+    required: false
+    pinning: per-account
+    policy_url: https://developers.example.com/versioning
+    supported:
+      - version: '2025-11-18'
+        status: supported
+        released: '2025-11-18'
+        note: >-
+          The version accounts created before 2026-08-01 are pinned to. Sending no
+          header keeps you here.
+      - version: '2026-08-01'
+        status: current
+        released: '2026-08-01'
+        url: https://developers.example.com/changelog/2026-08-01
+
+- name: Versioning — Content API
+  type: Versioning
+  description: >-
+    The Content API negotiates its version through a vendor media type rather than a
+    header, so a consumer selects it with Accept.
+  url: https://developers.example.com/content/versioning
+  source_date: '2026-08-17'
+  data:
+    scheme: sequential
+    location: media-type
+    media_type_pattern: application/vnd.example.content.v{version}+json
+    current: '2'
+    default: '1'
+    required: false
+    pinning: per-request
+    supported:
+      - version: '1'
+        status: deprecated
+        released: '2022-06-01'
+        deprecated: '2026-03-01'
+        sunset: '2027-03-01'
+      - version: '2'
+        status: current
+        released: '2026-03-01'

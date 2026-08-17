@@ -1,0 +1,196 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://raw.githubusercontent.com/api-commons/versioning/main/versioning-json-schema.yml
+title: API Commons Versioning
+description: >-
+  A machine-readable description of how an API is versioned — the scheme the version
+  string follows, where a consumer puts it on a request, which versions are currently
+  supported, and what happens to the ones that are not. This is the schema behind the
+  Versioning property in API Commons.
+
+  Versioning is documented in prose almost everywhere and expressed identically almost
+  nowhere. The point of this schema is that a consumer, or an agent, can determine how
+  to pin a version without reading a documentation page.
+
+oneOf:
+  - title: Versioning document
+    description: A bare versioning declaration — a standalone versioning file.
+    $ref: '#/$defs/versioning'
+  - title: Versioning properties
+    description: >-
+      One or more Versioning properties as they appear inside an apis.yml / apis.json
+      index, each carrying its declaration under `data`.
+    type: array
+    minItems: 1
+    items:
+      $ref: '#/$defs/versioningProperty'
+
+$defs:
+
+  versioningProperty:
+    type: object
+    additionalProperties: false
+    required:
+      - type
+      - data
+    properties:
+      name:
+        type: string
+        description: The name of the property as it appears in the index.
+      type:
+        const: Versioning
+        description: The API Commons property type. Always Versioning.
+      description:
+        type: string
+        description: What this declaration covers.
+      url:
+        type: string
+        format: uri
+        description: The provider page this was read from.
+      source_date:
+        type: string
+        format: date
+        description: The date this was last verified against that page.
+      data:
+        $ref: '#/$defs/versioning'
+
+  versioning:
+    type: object
+    additionalProperties: false
+    required:
+      - scheme
+      - location
+    properties:
+
+      scheme:
+        description: >-
+          The shape of the version string itself. `semantic` is SemVer (2.1.0);
+          `calendar` is CalVer (2024.03); `date` is a plain date, as Stripe and Twilio
+          use (2010-04-01); `sequential` is a bare incrementing integer (v1, v2);
+          `none` means the API is explicitly unversioned.
+        enum:
+          - semantic
+          - calendar
+          - date
+          - sequential
+          - custom
+          - none
+
+      location:
+        description: >-
+          Where the consumer puts the version on a request. This is the field that
+          decides whether an integration works, and the one most often left to prose.
+        enum:
+          - path
+          - header
+          - query
+          - media-type
+          - subdomain
+          - body
+
+      parameter:
+        type: string
+        description: >-
+          The name of the header or query parameter carrying the version, when
+          `location` is header or query. For example API-Version, Stripe-Version,
+          X-GitHub-Api-Version, or api-version.
+
+      media_type_pattern:
+        type: string
+        description: >-
+          The media type template carrying the version, when `location` is media-type.
+          For example application/vnd.example.v{version}+json.
+
+      path_pattern:
+        type: string
+        description: >-
+          The path template carrying the version, when `location` is path.
+          For example /v{version} or /{version}.
+
+      current:
+        type: string
+        description: The version a new consumer should build against today.
+
+      default:
+        type: string
+        description: >-
+          The version served when a consumer sends no version at all. Often differs from
+          `current`, and the difference is a common source of surprise.
+
+      required:
+        type: boolean
+        description: >-
+          Whether a request must carry a version. When false, note what `default` is —
+          an unversioned request that silently rolls forward is a breaking change waiting
+          to happen.
+
+      pinning:
+        description: >-
+          How a consumer's version is chosen. `per-request` means the request decides;
+          `per-account` means it is pinned at the account level, as Stripe does;
+          `per-key` means it is bound to the credential.
+        enum:
+          - per-request
+          - per-account
+          - per-key
+          - none
+
+      supported:
+        type: array
+        minItems: 1
+        description: The versions currently reachable, and their state.
+        items:
+          $ref: '#/$defs/version'
+
+      policy_url:
+        type: string
+        format: uri
+        description: The published versioning or deprecation policy.
+
+      breaking_change_definition_url:
+        type: string
+        format: uri
+        description: >-
+          Where the provider states what it considers a breaking change. Without this,
+          "we do not make breaking changes" is unfalsifiable.
+
+  version:
+    type: object
+    additionalProperties: false
+    required:
+      - version
+      - status
+    properties:
+      version:
+        type: string
+        description: The version identifier, exactly as a consumer would send it.
+      status:
+        description: Where this version sits in its life.
+        enum:
+          - preview
+          - beta
+          - current
+          - supported
+          - deprecated
+          - sunset
+          - retired
+      released:
+        type: string
+        format: date
+        description: The date this version became available.
+      deprecated:
+        type: string
+        format: date
+        description: The date this version was marked deprecated.
+      sunset:
+        type: string
+        format: date
+        description: >-
+          The date this version stops being served. Corresponds to the value a provider
+          should also be sending in the Sunset header (RFC 9745).
+      url:
+        type: string
+        format: uri
+        description: Documentation or changelog for this version.
+      note:
+        type: string
+        description: Anything a consumer needs to know before pinning to it.

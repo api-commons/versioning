@@ -1,0 +1,48 @@
+# API Commons — Versioning, illustrative example
+#
+# A made-up API on example.com that versions in the URL path with a sequential scheme,
+# and is running three versions at once: one deprecated with a sunset date, one current,
+# and one in preview.
+#
+# Note `required: true` and `default`. Together they answer the question every consumer
+# actually has — what happens if I send no version — which prose almost never states.
+
+scheme: sequential
+location: path
+path_pattern: /v{version}
+current: '3'
+default: '2'
+required: true
+pinning: per-request
+policy_url: https://developers.example.com/versioning
+breaking_change_definition_url: https://developers.example.com/versioning#what-counts-as-breaking
+
+supported:
+
+  - version: '1'
+    status: retired
+    released: '2019-04-01'
+    deprecated: '2023-01-15'
+    sunset: '2024-01-15'
+    note: Retired. Requests to /v1 return 410 Gone.
+
+  - version: '2'
+    status: deprecated
+    released: '2023-01-15'
+    deprecated: '2026-02-01'
+    sunset: '2027-02-01'
+    url: https://developers.example.com/changelog/v2
+    note: >-
+      Served with a Sunset header. Still the default for requests that omit a version,
+      which means unversioned integrations will break on the sunset date.
+
+  - version: '3'
+    status: current
+    released: '2026-02-01'
+    url: https://developers.example.com/changelog/v3
+
+  - version: '4'
+    status: preview
+    released: '2026-07-20'
+    url: https://developers.example.com/changelog/v4
+    note: Preview. Shape may change without notice; do not build production integrations on it.
